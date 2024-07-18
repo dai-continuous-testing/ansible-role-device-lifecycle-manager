@@ -1,0 +1,115 @@
+---
+
+# Install docker-ce
+- name: Install required pkgs
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - yum-utils
+    - device-mapper-persistent-data
+    - lvm2
+  become: true
+
+- name: /etc/docker directory
+  file:
+    path: /etc/docker
+    state: directory
+    mode: '0644'
+  become: true
+
+- name: /var/log/wifimonitor directory
+  file:
+    path: /var/log/wifimonitor
+    state: directory
+    mode: '0644'
+  become: true
+
+- name: sumologs.log file
+  file:
+    path: /var/log/wifimonitor/sumologs.log
+    state: touch
+    mode: '0644'
+  become: true
+
+- name: Install Docker
+  yum:
+    name: "{{ item }}"
+    state: present
+  with_items: [ 'docker-ce', 'docker-ce-cli', 'containerd.io', 'docker-compose-plugin' ]
+  register: docker_installed
+  async: 28800
+  become: true
+
+- name: Configure Docker Daemon
+  copy:
+    src: docker-daemon.json
+    dest: /etc/docker/daemon.json
+  become: true
+
+- name: Add user to docker group
+  shell: "usermod -aG docker {{ ansible_user }}"
+  become: true
+
+- name: Create systemd drop-in directory for docker
+  file:
+    path: /etc/systemd/system/docker.service.d
+    state: directory
+    mode: '0755'
+  become: true
+
+- name: Override Docker service configuration
+  copy:
+    src: override.conf
+    dest: /etc/systemd/system/docker.service.d/override.conf
+    mode: '0644'
+  become: true
+
+- name: Reload systemd daemon and restart Docker service
+  service:
+    name: docker
+    state: restarted
+    daemon_reload: yes
+  become: true
+
+- name: Start Docker service
+  service:
+    name: docker
+    state: restarted
+    enabled: yes
+  become: true
+
+- name: Deploy Portainer
+  block:
+    - name: Download Portainer stack file
+      command: "curl -L https://experitest-appium.s3.amazonaws.com/portainer-agent-stack.yml -o portainer-agent-stack.yml"
+      become: True
+      
+    - name: Deploy Portainer stack
+      command: "sudo docker stack deploy --compose-file=portainer-agent-stack.yml portainer"
+      become: true
+
+# Install AWS Cli
+- name: installing awscli on the machine
+  yum:
+    name: awscli
+    state: present
+  become: true
+
+- name: Make sure pip is installed
+  yum:
+    name: python-pip
+    state: present
+  become: true
+
+- name: Install Docker SDK for Python
+  pip:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - certifi==2020.6.20
+    - requests==2.24.0
+    - docker==4.3.1
+  become: true
+  
+...

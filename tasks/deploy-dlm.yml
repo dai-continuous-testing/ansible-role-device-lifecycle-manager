@@ -1,0 +1,50 @@
+---
+# tasks/main.yml
+
+- name: login to aws ecr
+  shell: "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin {{awsecr_name}}"
+  environment:
+    AWS_ACCESS_KEY_ID: "{{ lookup('env','aws_access_key') }}"
+    AWS_SECRET_ACCESS_KEY: "{{ lookup('env','aws_secret_key') }}"
+  become: true
+
+- name: Pull Device Lifecycle Manager image from ecr
+  shell: docker pull {{ image_name }}
+  become: true
+
+- name: Check if the Docker Swarm service exists
+  docker_swarm_service_info:
+    name: daas-service
+  register: swarm_service_info
+
+- name: Deploy the Docker Swarm service
+  docker_swarm_service:
+    name: daas-service
+    image: "{{ image_name }}"
+    env:
+      SPRING_APPLICATION_JSON: "{{ dlm_application_properties | to_json }}"
+    mode: replicated
+    replicas: 3
+    update_config:
+      parallelism: 1
+      delay: 10s
+      failure_action: rollback
+      monitor: 60s
+      order: start-first
+  when: swarm_service_info.services | length == 0
+
+- name: Update the Docker Swarm service if image version changes
+  docker_swarm_service:
+    name: daas-service
+    image: "{{ image_name }}"
+    env:
+      SPRING_APPLICATION_JSON: "{{ dlm_application_properties | to_json }}"
+    mode: replicated
+    replicas: 3
+    update_config:
+      parallelism: 1
+      delay: 10s
+      failure_action: rollback
+      monitor: 60s
+      order: start-first
+  when: swarm_service_info.services | length > 0 and swarm_service_info.services[0].spec.task_template.container_spec.image != "{{ image_name }}"

@@ -1,0 +1,13 @@
+---
+# tasks file for ansible-role-device-lifecycle-manager
+
+- name: Fail if OS is not supported
+  fail:
+    msg: "Unsupported OS family: {{ ansible_os_family }}"
+  when: ansible_os_family not in ['Debian', 'RedHat']
+
+- name: Include OS specific docker install task
+  include_tasks: "{{ ansible_os_family | lower }}-docker-install.yml"
+
+- name: Deploy Device Lifecycle Manager
+  include_tasks: deploy-dlm.yml

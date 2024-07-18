@@ -1,0 +1,20 @@
+---
+# defaults file for ansible-role-device-lifecycle-manager
+awsecr_name: 789032366904.dkr.ecr.us-east-1.amazonaws.com/cloud/dlm:latest
+
+image_name: "{{ awsecr_name }}/cloud/dlm:{{ dlm_version }}"
+
+aws_access_key: "{{ lookup('env','aws_access_key') }}"
+aws_secret_key: "{{ lookup('env','aws_secret_key') }}"
+
+# group_vars/all.yml
+dlm_application_proerties:
+  server.port: "8080"
+  kafka.bootstrap.servers: "confluencestack.xyz.local:9092"
+  daas.ping.interval: "30"
+  ios.backup.path: "default"
+  enable.ios.backup.restore: "false"
+  enable.android.backup.restore: "true"
+  android.prefer.testharness: "false"
+  daas.environment: "prod"
+  bridge.region: "DE"

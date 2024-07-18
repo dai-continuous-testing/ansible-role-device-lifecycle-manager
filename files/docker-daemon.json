@@ -1,0 +1,9 @@
+{
+    "log-driver": "json-file",
+    "log-opts": {"max-size": "10m","max-file": "10" },
+    "bip": "10.200.0.1/24",
+    "storage-driver": "devicemapper",
+    "default-address-pools":[
+      {"base":"10.201.0.0/16","size":24}
+    ]
+}
