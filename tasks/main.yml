@@ -95,4 +95,4 @@
       failure_action: rollback
       monitor: 60s
       order: start-first
-  when: swarm_service_info_daas.service is defined and swarm_service_info_daas.service | length > 0 and swarm_service_info_daas.service[0].Spec.TaskTemplate.ContainerSpec.Image != image_name
+  when: swarm_service_info_daas.service is defined and swarm_service_info_daas.service | length > 0 and swarm_service_info_daas.service.Spec.TaskTemplate.ContainerSpec.Image != image_name
