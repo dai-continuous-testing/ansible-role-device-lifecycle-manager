@@ -36,6 +36,15 @@
     - name: Add user to docker group
       shell: "usermod -aG docker {{ ansible_user }}"
       become: true
+    
+    - name: Initialize Docker Swarm
+      command: "docker swarm init --advertise-addr {{ ansible_default_ipv4.address }}"
+      become: true
+      ignore_errors: yes
+      register: swarm_init_result
+      changed_when: "'already a swarm' not in swarm_init_result.stderr"
+      failed_when: "'already a swarm' not in swarm_init_result.stderr and swarm_init_result.rc != 0"
+      when: docker_check.rc == 0
 
     - name: Create systemd drop-in directory for docker
       file:
@@ -56,13 +65,6 @@
         name: docker
         state: restarted
         daemon_reload: yes
-      become: true
-    
-    - name: Start Docker service
-      service:
-        name: docker
-        state: restarted
-        enabled: yes
       become: true
     
     - name: Deploy Portainer
