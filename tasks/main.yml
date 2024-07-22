@@ -86,4 +86,4 @@
       failure_action: rollback
       monitor: 60s
       order: start-first
-  when: swarm_service_info.service | length > 0 and swarm_service_info.services[0].spec.task_template.container_spec.image != "{{ image_name }}"
+  when: swarm_service_info.service | length > 0 and swarm_service_info.service[0].spec.task_template.container_spec.image != "{{ image_name }}"
