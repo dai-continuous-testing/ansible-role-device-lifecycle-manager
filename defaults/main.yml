@@ -1,6 +1,6 @@
 ---
 # defaults file for ansible-role-device-lifecycle-manager
-awsecr_name: 789032366904.dkr.ecr.us-east-1.amazonaws.com/cloud/dlm:latest
+awsecr_name: 789032366904.dkr.ecr.us-east-1.amazonaws.com
 
 image_name: "{{ awsecr_name }}/cloud/dlm:{{ dlm_version }}"
 
