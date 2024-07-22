@@ -8,7 +8,7 @@ aws_access_key: "{{ lookup('env','aws_access_key') }}"
 aws_secret_key: "{{ lookup('env','aws_secret_key') }}"
 
 # group_vars/all.yml
-dlm_application_proerties:
+dlm_application_properties:
   server.port: "8080"
   kafka.bootstrap.servers: "confluencestack.xyz.local:9092"
   daas.ping.interval: "30"

@@ -1,13 +1,89 @@
 ---
-# tasks file for ansible-role-device-lifecycle-manager
+# tasks/main.yml
 
-- name: Fail if OS is not supported
+- name: Check if Docker is installed
+  command: docker --version
+  register: docker_installed
+  ignore_errors: yes
+
+- name: Fail if Docker is not installed
   fail:
-    msg: "Unsupported OS family: {{ ansible_os_family }}"
-  when: ansible_os_family not in ['Debian', 'RedHat']
+    msg: "Docker is not installed on this host."
+  when: docker_installed.failed
 
-- name: Include OS specific docker install task
-  include_tasks: "{{ ansible_os_family | lower }}-docker-install.yml"
+- name: Check if Docker Swarm is initialized
+  command: docker info --format '{{.Swarm.LocalNodeState}}'
+  register: swarm_status
+  when: not docker_installed.failed
 
-- name: Deploy Device Lifecycle Manager
-  include_tasks: deploy-dlm.yml
+- name: Fail if Docker Swarm is not initialized
+  fail:
+    msg: "Docker Swarm is not initialized on this host."
+  when: swarm_status.stdout != "active"
+
+- name: Success message
+  debug:
+    msg: "Docker is installed and Docker Swarm is initialized."
+  when: swarm_status.stdout == "active"
+
+- name: Make sure pip is installed
+  apt:
+    name: python3-pip
+    state: present
+
+- name: Install Docker SDK for Python
+  pip:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - certifi==2020.6.20
+    - requests==2.24.0
+    - docker==4.3.1
+
+- name: login to aws ecr
+  shell: "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin {{awsecr_name}}"
+  environment:
+    AWS_ACCESS_KEY_ID: "{{ lookup('env','aws_access_key') }}"
+    AWS_SECRET_ACCESS_KEY: "{{ lookup('env','aws_secret_key') }}"
+  become: true
+
+- name: Pull Device Lifecycle Manager image from ecr
+  shell: docker pull {{ image_name }}
+  become: true
+
+- name: Check if the Docker Swarm service exists
+  docker_swarm_service_info:
+    name: daas-service
+  register: swarm_service_info
+
+- name: Deploy the Docker Swarm service
+  docker_swarm_service:
+    name: daas-service
+    image: "{{ image_name }}"
+    env:
+      SPRING_APPLICATION_JSON: "{{ dlm_application_properties | to_json }}"
+    mode: replicated
+    replicas: 3
+    update_config:
+      parallelism: 1
+      delay: 10s
+      failure_action: rollback
+      monitor: 60s
+      order: start-first
+  when: swarm_service_info.services | length == 0
+
+- name: Update the Docker Swarm service if image version changes
+  docker_swarm_service:
+    name: daas-service
+    image: "{{ image_name }}"
+    env:
+      SPRING_APPLICATION_JSON: "{{ dlm_application_properties | to_json }}"
+    mode: replicated
+    replicas: 3
+    update_config:
+      parallelism: 1
+      delay: 10s
+      failure_action: rollback
+      monitor: 60s
+      order: start-first
+  when: swarm_service_info.services | length > 0 and swarm_service_info.services[0].spec.task_template.container_spec.image != "{{ image_name }}"
