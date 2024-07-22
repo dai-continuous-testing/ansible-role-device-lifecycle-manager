@@ -90,11 +90,15 @@
     - name: Deploy Portainer
       block:
         - name: Download Portainer stack file
-          command: "curl -L https://experitest-appium.s3.amazonaws.com/portainer-agent-stack.yml -o portainer-agent-stack.yml"
+          get_url:
+            url: "https://experitest-appium.s3.amazonaws.com/portainer-agent-stack.yml"
+            dest: "/tmp/portainer-agent-stack.yml"
+            mode: '0644'
           become: true
 
         - name: Deploy Portainer stack
-          command: "sudo docker stack deploy --compose-file=portainer-agent-stack.yml portainer"
+          ansible.builtin.command:
+            cmd: "sudo docker stack deploy --compose-file=/tmp/portainer-agent-stack.yml portainer"
           become: true
   when: docker_check.rc != 0
    
