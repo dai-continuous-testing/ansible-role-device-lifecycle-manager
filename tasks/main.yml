@@ -12,7 +12,7 @@
   when: docker_installed.failed
 
 - name: Check if Docker Swarm is initialized
-  command: docker info --format '{{.Swarm.LocalNodeState}}'
+  command: "docker info --format '{{.Swarm.LocalNodeState}}'"
   register: swarm_status
   when: not docker_installed.failed
 
