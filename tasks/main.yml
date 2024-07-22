@@ -12,7 +12,7 @@
   when: docker_installed.failed
 
 - name: Check if Docker Swarm is initialized
-  shell: "docker info --format '{{.Swarm.LocalNodeState}}'"
+  ansible.builtin.raw: "docker info --format '{{.Swarm.LocalNodeState}}'"
   register: swarm_status
   when: not docker_installed.failed
 
