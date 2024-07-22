@@ -72,6 +72,11 @@
       order: start-first
   when: not swarm_service_info.exists
 
+- name: Gather info of Docker Swarm service
+  docker_swarm_service_info:
+    name: daas-service
+  register: swarm_service_info_daas
+
 - name: Update the Docker Swarm service if image version changes
   docker_swarm_service:
     name: daas-service
@@ -86,4 +91,4 @@
       failure_action: rollback
       monitor: 60s
       order: start-first
-  when: swarm_service_info.service | length > 0 and swarm_service_info.service[0].spec.task_template.container_spec.image != "{{ image_name }}"
+  when: swarm_service_info_daas.service | length > 0 and swarm_service_info_daas.service[0].spec.task_template.container_spec.image != "{{ image_name }}"
