@@ -14,7 +14,6 @@
 - name: Check if Docker Swarm is initialized
   command: "docker info --format '{% raw %}{{.Swarm.LocalNodeState}}{% endraw %}'"
   register: swarm_status
-  when: not docker_installed.failed
 
 - name: Fail if Docker Swarm is not initialized
   fail:
@@ -26,6 +25,8 @@
     msg: "Docker is installed and Docker Swarm is initialized."
   when: swarm_status.stdout == "active"
 
+
+## Required dependencies for ansible docker modules.
 - name: Make sure pip is installed
   package:
     name: python3-pip
@@ -51,11 +52,6 @@
   shell: docker pull {{ image_name }}
   become: true
 
-- name: Check if the Docker Swarm service exists
-  docker_swarm_service_info:
-    name: daas-service
-  register: swarm_service_info
-
 - name: Deploy the Docker Swarm service
   docker_swarm_service:
     name: daas-service
@@ -80,19 +76,3 @@
 - name: Debug swarm_service_info_daas
   debug:
     var: swarm_service_info_daas
-
-- name: Update the Docker Swarm service if image version changes
-  docker_swarm_service:
-    name: daas-service
-    image: "{{ image_name }}"
-    env:
-      SPRING_APPLICATION_JSON: "{{ dlm_application_properties | to_json }}"
-    mode: replicated
-    replicas: 3
-    update_config:
-      parallelism: 1
-      delay: 10s
-      failure_action: rollback
-      monitor: 60s
-      order: start-first
-  when: swarm_service_info_daas.service is defined and swarm_service_info_daas.service | length > 0 and swarm_service_info_daas.service.Spec.TaskTemplate.ContainerSpec.Image != image_name
