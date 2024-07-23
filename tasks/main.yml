@@ -1,0 +1,78 @@
+---
+# tasks/main.yml
+
+- name: Check if Docker is installed
+  command: docker --version
+  register: docker_installed
+  ignore_errors: yes
+
+- name: Fail if Docker is not installed
+  fail:
+    msg: "Docker is not installed on this host."
+  when: docker_installed.failed
+
+- name: Check if Docker Swarm is initialized
+  command: "docker info --format '{% raw %}{{.Swarm.LocalNodeState}}{% endraw %}'"
+  register: swarm_status
+
+- name: Fail if Docker Swarm is not initialized
+  fail:
+    msg: "Docker Swarm is not initialized on this host."
+  when: swarm_status.stdout != "active"
+
+- name: Success message
+  debug:
+    msg: "Docker is installed and Docker Swarm is initialized."
+  when: swarm_status.stdout == "active"
+
+
+## Required dependencies for ansible docker modules.
+- name: Make sure pip is installed
+  package:
+    name: python3-pip
+    state: present
+
+- name: Install Docker SDK for Python
+  pip:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - certifi==2020.6.20
+    - requests==2.24.0
+    - docker==4.3.1
+
+- name: login to aws ecr
+  shell: "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin {{awsecr_name}}"
+  environment:
+    AWS_ACCESS_KEY_ID: "{{ lookup('env','aws_access_key') }}"
+    AWS_SECRET_ACCESS_KEY: "{{ lookup('env','aws_secret_key') }}"
+  become: true
+
+- name: Pull Device Lifecycle Manager image from ecr
+  shell: docker pull {{ image_name }}
+  become: true
+
+- name: Deploy the Docker Swarm service
+  docker_swarm_service:
+    name: daas-service
+    image: "{{ image_name }}"
+    env:
+      SPRING_APPLICATION_JSON: "{{ dlm_application_properties | to_json }}"
+    mode: replicated
+    replicas: 3
+    update_config:
+      parallelism: 1
+      delay: 10s
+      failure_action: rollback
+      monitor: 60s
+      order: start-first
+  when: not swarm_service_info.exists
+
+- name: Gather info of Docker Swarm service
+  docker_swarm_service_info:
+    name: daas-service
+  register: swarm_service_info_daas
+
+- name: Debug swarm_service_info_daas
+  debug:
+    var: swarm_service_info_daas

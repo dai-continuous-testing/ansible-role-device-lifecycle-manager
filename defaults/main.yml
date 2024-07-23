@@ -1,0 +1,11 @@
+---
+# defaults file for ansible-role-device-lifecycle-manager
+awsecr_name: 789032366904.dkr.ecr.us-east-1.amazonaws.com
+
+image_name: "{{ awsecr_name }}/cloud/dlm:{{ dlm_version }}"
+
+aws_access_key: "{{ lookup('env','aws_access_key') }}"
+aws_secret_key: "{{ lookup('env','aws_secret_key') }}"
+
+# group_vars/all.yml
+dlm_application_properties: {}
