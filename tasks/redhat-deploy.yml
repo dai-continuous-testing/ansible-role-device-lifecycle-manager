@@ -1,0 +1,64 @@
+---
+- name: Check if Docker Swarm service exists
+  command: docker service ls
+  register: swarm_service_list
+
+- name: Set fact if service exists
+  set_fact:
+    service_exists: "{{ 'daas-service' in swarm_service_list.stdout_lines }}"
+
+- name: Deploy the Docker Swarm service if it doesn't exist
+  docker_swarm_service:
+    name: daas-service
+    image: "{{ image_name }}"
+    env:
+      SPRING_APPLICATION_JSON: "{{ dlm_application_properties | to_json }}"
+    mode: replicated
+    replicas: 3
+    update_config:
+      parallelism: 1
+      delay: 10s
+      failure_action: rollback
+      monitor: 60s
+      order: start-first
+  when: not service_exists
+
+- name: Gather info of Docker Swarm service
+  command: docker service inspect daas-service --format '{% raw %}{{json .}}{% endraw %}'
+  register: swarm_service_info_daas
+  when: service_exists
+
+- name: Set service info fact
+  set_fact:
+    service_info: "{{ swarm_service_info_daas.stdout | from_json }}"
+  when: service_exists
+
+- name: Debug swarm_service_info_daas
+  debug:
+    var: service_info
+  when: service_exists
+
+- name: Update the Docker Swarm service if image version changes
+  docker_swarm_service:
+    name: daas-service
+    image: "{{ image_name }}"
+    env:
+      SPRING_APPLICATION_JSON: "{{ dlm_application_properties | to_json }}"
+    mode: replicated
+    replicas: 3
+    update_config:
+      parallelism: 1
+      delay: 10s
+      failure_action: rollback
+      monitor: 60s
+      order: start-first
+  when: 
+    - service_info is defined
+    - service_info.Spec.TaskTemplate.ContainerSpec.Image != image_name
+
+- name: Skip update - Service is up to date
+  debug:
+    msg: "Service is up to date"
+  when:
+    - service_info is defined
+    - service_info.Spec.TaskTemplate.ContainerSpec.Image == image_name
