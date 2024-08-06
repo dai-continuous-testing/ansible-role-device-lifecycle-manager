@@ -59,7 +59,7 @@
     env:
       SPRING_APPLICATION_JSON: "{{ dlm_application_properties | to_json }}"
     mode: replicated
-    replicas: 3
+    replicas: 1
     update_config:
       parallelism: 1
       delay: 10s
