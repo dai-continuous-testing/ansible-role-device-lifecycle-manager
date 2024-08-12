@@ -54,12 +54,12 @@
 
 - name: Deploy the Docker Swarm service
   docker_swarm_service:
-    name: daas-service
+    name: "{{ service_name }}"
     image: "{{ image_name }}"
     env:
       SPRING_APPLICATION_JSON: "{{ dlm_application_properties | to_json }}"
     mode: replicated
-    replicas: 1
+    replicas: "{{ dlm_replicas }}"
     update_config:
       parallelism: 1
       delay: 10s
@@ -69,7 +69,7 @@
 
 - name: Gather info of Docker Swarm service
   docker_swarm_service_info:
-    name: daas-service
+    name: "{{ service_name }}"
   register: swarm_service_info_daas
 
 - name: Debug swarm_service_info_daas
