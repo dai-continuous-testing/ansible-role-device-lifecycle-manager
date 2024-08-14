@@ -9,3 +9,9 @@ aws_secret_key: "{{ lookup('env','aws_secret_key') }}"
 
 # group_vars/all.yml
 dlm_application_properties: {}
+
+volume_name: dlm-backup
+
+volume_path: /var/lib/docker/volumes/dlm-backup/_data
+
+mount_path: /Daas

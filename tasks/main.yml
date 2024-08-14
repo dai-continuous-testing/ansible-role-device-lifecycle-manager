@@ -52,21 +52,31 @@
   shell: docker pull {{ image_name }}
   become: true
 
+- name: Create Docker volume
+  docker_volume:
+    name: "{{ volume_name }}"
+    state: present
+
 - name: Deploy the Docker Swarm service
   docker_swarm_service:
-    name: daas-service
+    name: "{{ service_name }}"
     image: "{{ image_name }}"
     env:
       SPRING_APPLICATION_JSON: "{{ dlm_application_properties | to_json }}"
     mode: replicated
-    replicas: 3
+    replicas: "{{ dlm_replicas }}"
+    force_update: true
     update_config:
       parallelism: 1
       delay: 10s
       failure_action: rollback
       monitor: 60s
       order: start-first
-  when: not swarm_service_info.exists
+    mounts:
+      - type: volume
+        source: "{{ volume_path }}"
+        target: "{{ mount_path }}"
+        read_only: true
 
 - name: Gather info of Docker Swarm service
   docker_swarm_service_info:
