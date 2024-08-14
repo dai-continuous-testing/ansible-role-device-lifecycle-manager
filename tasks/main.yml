@@ -76,7 +76,6 @@
       - type: volume
         source: "{{ volume_path }}"
         target: "{{ mount_path }}"
-        read_only: true
 
 - name: Gather info of Docker Swarm service
   docker_swarm_service_info:
