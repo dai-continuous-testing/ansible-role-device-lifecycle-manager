@@ -80,7 +80,7 @@
 
 - name: Gather info of Docker Swarm service
   docker_swarm_service_info:
-    name: daas-service
+    name: "{{ service_name }}"
   register: swarm_service_info_daas
 
 - name: Debug swarm_service_info_daas
