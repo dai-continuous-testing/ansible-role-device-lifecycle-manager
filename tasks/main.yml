@@ -52,6 +52,11 @@
   shell: docker pull {{ image_name }}
   become: true
 
+- name: Create Docker volume
+  docker_volume:
+    name: "{{ volume_name }}"
+    state: present
+
 - name: Deploy the Docker Swarm service
   docker_swarm_service:
     name: "{{ service_name }}"
@@ -67,6 +72,10 @@
       failure_action: rollback
       monitor: 60s
       order: start-first
+    mounts:
+      - type: volume
+        source: "{{ volume_name }}"
+        target: "{{ mount_path }}"
 
 - name: Gather info of Docker Swarm service
   docker_swarm_service_info:

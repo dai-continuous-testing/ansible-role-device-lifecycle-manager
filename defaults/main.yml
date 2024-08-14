@@ -12,6 +12,10 @@ aws_secret_key: "{{ lookup('env','aws_secret_key') }}"
 # group_vars/all.yml
 dlm_application_properties: {}
 
+volume_name: "{{ service_name }}-backup"
+
+mount_path: "/root/backup"
+
 service_name: "daas-service"
 
 dlm_replicas: 1
