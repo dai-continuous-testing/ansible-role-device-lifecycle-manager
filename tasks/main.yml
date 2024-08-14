@@ -60,6 +60,7 @@
       SPRING_APPLICATION_JSON: "{{ dlm_application_properties | to_json }}"
     mode: replicated
     replicas: "{{ dlm_replicas }}"
+    force_update: true
     update_config:
       parallelism: 1
       delay: 10s
