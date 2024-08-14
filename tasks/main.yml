@@ -74,7 +74,7 @@
       order: start-first
     mounts:
       - type: volume
-        source: "{{ volume_path }}"
+        source: "{{ volume_name }}"
         target: "{{ mount_path }}"
 
 - name: Gather info of Docker Swarm service

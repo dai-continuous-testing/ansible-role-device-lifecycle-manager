@@ -14,8 +14,6 @@ dlm_application_properties: {}
 
 volume_name: "{{ service_name }}-backup"
 
-volume_path: "/var/lib/docker/volumes/{{ volume_name }}/_data"
-
 mount_path: "/root/backup"
 
 service_name: "daas-service"
