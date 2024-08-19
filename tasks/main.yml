@@ -1,6 +1,22 @@
 ---
 # tasks/main.yml
 
+- name: assert all vars are set
+  assert: 
+    that: "{{ item }} != '' " 
+    quiet: true
+  with_items:
+  - service_name
+  - service_volume_name
+  - supervision_volume_name
+  - service_mount_path
+  - supervision_mount_path
+  - dlm_replicas
+  - dlm_internet_secrets
+  - dlm_p12_password
+  - dlm_application_properties
+  - dlm_version
+
 - name: Check if Docker is installed
   command: docker --version
   register: docker_installed
@@ -54,7 +70,44 @@
 
 - name: Create Docker volume
   docker_volume:
-    name: "{{ volume_name }}"
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - "{{ service_volume_name }}"
+    - "{{ supervision_volume_name }}"
+
+- name: Create temp file for internet info secrets
+  file:
+    path: "/tmp/{{ service_name }}_internetinfo"
+    state: touch
+
+- name: Write secrets to temp internet info file
+  lineinfile:
+    path: "/tmp/{{ service_name }}_internetinfo"
+    line: "{{ item.key }}={{ item.value }}"
+    regexp: "^{{ item.key | replace('.', '\\.') }}="
+  with_dict: "{{ dlm_internet_secrets }}"
+
+- name: Create supervision directory on docker host
+  file: 
+    path: "{{ supervision_mount_path }}"
+    state: directory
+
+- name: Create file for p12 secret
+  copy:
+    content: "{{ dlm_p12_password }}"
+    dest: "{{ supervision_mount_path }}/{{ service_name }}_p12.password"
+
+- name: Create docker secrets for internet info
+  docker_secret:
+    name: "{{ service_name }}_internetInfo"
+    data_src : "/tmp/{{ service_name }}_internetinfo"
+    state: present
+
+- name: Create docker secrets for p12 password
+  docker_secret:
+    name: "{{ service_name }}_p12.password"
+    data_src : "{{ supervision_mount_path }}/{{ service_name }}_p12.password"
     state: present
 
 - name: Deploy the Docker Swarm service
@@ -74,8 +127,16 @@
       order: start-first
     mounts:
       - type: volume
-        source: "{{ volume_name }}"
-        target: "{{ mount_path }}"
+        source: "{{ service_volume_name }}"
+        target: "{{ service_mount_path }}"
+      - type: volume
+        source: "{{ supervision_volume_name }}"
+        target: "{{ supervision_mount_path }}"
+    secrets:
+      - secret_name: "{{ service_name }}_internetinfo"
+        filename: "/tmp/{{ service_name }}_internetinfo"
+      - secret_name: "{{ service_name }}_p12.password"
+        filename: "{{ supervision_mount_path }}/{{ service_name }}_p12.password"
 
 - name: Gather info of Docker Swarm service
   docker_swarm_service_info:
