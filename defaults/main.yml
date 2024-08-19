@@ -13,14 +13,18 @@ aws_secret_key: "{{ lookup('env','aws_secret_key') }}"
 dlm_application_properties: {}
 
 service_volume_name: "{{ service_name }}-backup"
-supervision_volume_name: "{{ service_name }}-supervision"
+supervision_volume_name: "SuperVision"
 
 service_mount_path: "/root/backup"
 supervision_mount_path: "/tmp/supervision"
+supervision_p12_path: ""
 
 service_name: "daas-service"
 
 dlm_replicas: 1
 
-dlm_internet_secrets: {}
+dlm_internet_secrets:
+  - wifi.ssid: "maintenance"
+  - wifi.password: "12345678"
+
 dlm_p12_password: ""
