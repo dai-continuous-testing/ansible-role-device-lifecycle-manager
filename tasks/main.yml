@@ -16,6 +16,8 @@
   - dlm_p12_password
   - dlm_application_properties
   - dlm_version
+  - aws_access_key
+  - aws_secret_key
 
 - name: Check if Docker is installed
   command: docker --version
