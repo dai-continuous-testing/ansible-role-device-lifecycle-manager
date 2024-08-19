@@ -108,7 +108,7 @@
 - name: Create docker secrets for internet info
   docker_secret:
     name: "maintenance.internet.authentication"
-    data_src : "/tmp/internetinfo"
+    data_src : "/tmp/internetInfo"
     state: present
 
 - name: Create docker secrets for p12 password
