@@ -110,7 +110,6 @@
     name: "maintenance.internet.authentication"
     data_src : "/tmp/internetInfo"
     state: present
-    force: true
 
 - name: Create docker secrets for p12 password
   docker_secret:
