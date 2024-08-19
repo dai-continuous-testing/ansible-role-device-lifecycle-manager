@@ -110,12 +110,14 @@
     name: "maintenance.internet.authentication"
     data_src : "/tmp/internetInfo"
     state: present
+    force: true
 
 - name: Create docker secrets for p12 password
   docker_secret:
     name: "p12.password"
     data_src : "{{ supervision_mount_path }}/p12_password"
     state: present
+    force: true
 
 - name: Deploy the Docker Swarm service
   docker_swarm_service:
