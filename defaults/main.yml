@@ -17,7 +17,6 @@ supervision_volume_name: "SuperVision"
 
 service_mount_path: "/root/backup"
 supervision_mount_path: "/tmp/supervision"
-supervision_p12_path: ""
 
 service_name: "daas-service"
 

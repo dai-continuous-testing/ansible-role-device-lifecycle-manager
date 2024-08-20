@@ -17,7 +17,6 @@
   - dlm_version
   - aws_access_key
   - aws_secret_key
-  - supervision_p12_path
   - nfs_supervision_path
   - nfs_server_ip
   - nfs_backup_path
@@ -107,11 +106,6 @@
   file: 
     path: "{{ supervision_mount_path }}"
     state: directory
-
-- name: Copy supervision p12 to docker host
-  copy:
-    src: "{{ supervision_p12_path }}"
-    dest: "/var/lib/docker/volumes/{{ supervision_volume_name }}/_data/SupeVisionCert.p12"
 
 - name: Create file for p12 secret
   copy:
