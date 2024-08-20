@@ -18,8 +18,9 @@
   - aws_access_key
   - aws_secret_key
   - supervision_p12_path
-  - nfs_export_path
+  - nfs_supervision_path
   - nfs_server_ip
+  - nfs_backup_path
 
 - name: Check if Docker is installed
   command: docker --version
@@ -75,6 +76,10 @@
 - name: Create Docker volume for service
   docker_volume:
     name: "{{ service_volume_name }}"
+    driver_options:
+      type: "nfs"
+      o: "addr={{ nfs_server_ip }},rw"
+      device: ":{{ nfs_backup_path }}"
     state: present
 
 - name: Create NFS Docker volume for supervision
@@ -83,7 +88,7 @@
     driver_options:
       type: "nfs"
       o: "addr={{ nfs_server_ip }},rw"
-      device: ":{{ nfs_export_path }}"
+      device: ":{{ nfs_supervision_path }}"
     state: present
 
 - name: Create temp file for internet info secrets
@@ -144,9 +149,21 @@
       - type: volume
         source: "{{ service_volume_name }}"
         target: "{{ service_mount_path }}"
+        driver_config:
+          name: local
+          options:
+            type: "nfs"
+            o: "addr={{ nfs_server_ip }},rw"
+            device: ":{{ nfs_backup_path }}"
       - type: volume
         source: "{{ supervision_volume_name }}"
         target: "{{ supervision_mount_path }}"
+        driver_config:
+          name: local
+          options:
+            type: "nfs"
+            o: "addr={{ nfs_server_ip }},rw"
+            device: ":{{ nfs_supervision_path }}"
     secrets:
       - secret_name: "maintenance.internet.authentication"
         filename: "/tmp/internetInfo"
