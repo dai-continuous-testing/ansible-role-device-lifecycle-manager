@@ -18,6 +18,8 @@
   - aws_access_key
   - aws_secret_key
   - supervision_p12_path
+  - nfs_export_path
+  - nfs_server_ip
 
 - name: Check if Docker is installed
   command: docker --version
