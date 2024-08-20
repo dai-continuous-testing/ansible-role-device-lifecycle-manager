@@ -70,13 +70,19 @@
   shell: docker pull {{ image_name }}
   become: true
 
-- name: Create Docker volume
+- name: Create Docker volume for service
   docker_volume:
-    name: "{{ item }}"
+    name: "{{ service_volume_name }}"
     state: present
-  with_items:
-    - "{{ service_volume_name }}"
-    - "{{ supervision_volume_name }}"
+
+- name: Create NFS Docker volume for supervision
+  docker_volume:
+    name: "{{ supervision_volume_name }}"
+    driver_opts:
+      type: "nfs"
+      o: "addr={{ nfs_server_ip }},rw"
+      device: ":{{ nfs_export_path }}"
+    state: present
 
 - name: Create temp file for internet info secrets
   file:
@@ -98,7 +104,7 @@
 - name: Copy supervision p12 to docker host
   copy:
     src: "{{ supervision_p12_path }}"
-    dest: "/var/lib/docker/volumes/SuperVision/_data/SupevisionCert.p12"
+    dest: "/var/lib/docker/volumes/{{ supervision_volume_name }}/_data/SupeVisionCert.p12"
 
 - name: Create file for p12 secret
   copy:
