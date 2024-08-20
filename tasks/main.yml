@@ -80,7 +80,7 @@
 - name: Create NFS Docker volume for supervision
   docker_volume:
     name: "{{ supervision_volume_name }}"
-    driver_opts:
+    driver_options:
       type: "nfs"
       o: "addr={{ nfs_server_ip }},rw"
       device: ":{{ nfs_export_path }}"
