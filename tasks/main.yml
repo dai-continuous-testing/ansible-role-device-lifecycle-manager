@@ -98,7 +98,7 @@
 - name: Copy supervision p12 to docker host
   copy:
     src: "{{ supervision_p12_path }}"
-    dest: "/var/lib/docker/volumes/SuperVision/_data/SupevisionCert.p12"
+    dest: "/var/lib/docker/volumes/{{ supervision_volume_name }}/_data/{{ supervision_p12_path | basename }}"
 
 - name: Create file for p12 secret
   copy:
