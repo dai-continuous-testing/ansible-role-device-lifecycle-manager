@@ -106,7 +106,7 @@
   file: 
     path: "{{ supervision_mount_path }}"
     state: directory
-
+    
 - name: Create file for p12 secret
   copy:
     content: "{{ dlm_p12_password }}"
