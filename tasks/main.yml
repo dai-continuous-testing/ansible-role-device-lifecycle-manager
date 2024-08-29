@@ -68,23 +68,25 @@
   shell: docker pull {{ image_name }}
   become: true
 
-- name: Write secrets to temp internet info file
-  lineinfile:
-    path: "/tmp/internetInfo"
-    line: "{{ item.key }}={{ item.value }}"
-    regexp: "^{{ item.key | replace('.', '\\.') }}="
-  with_dict: "{{ dlm_internet_secrets }}"
-    
-
 - name: Make sure docker secrets for internet info exist
-  docker_secret:
-    name: "maintenance.internet.authentication"
-    state: present
+  command: "docker secret inspect maintenance.internet.authentication"
+  ignore_errors: yes
+  register: secret_internet_info
+
+- name: Fail if Docker secret does not exist
+  fail:
+    msg: "Docker secret 'maintenance.internet.authentication' does not exist."
+  when: secret_internet_info.rc != 0
 
 - name: Make sure docker secrets for p12 password exist
-  docker_secret:
-    name: "p12.password"
-    state: present
+  command: "docker secret inspect p12.password"
+  ignore_errors: yes
+  register: secret_p12_password
+
+- name: Fail if Docker secret does not exist
+  fail:
+    msg: "Docker secret 'p12.password' does not exist."
+  when: secret_p12_password.rc != 0
 
 - name: Deploy the Docker Swarm service
   docker_swarm_service:
