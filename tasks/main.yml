@@ -12,14 +12,10 @@
   - service_mount_path
   - supervision_mount_path
   - dlm_replicas
-  - dlm_p12_password
   - dlm_application_properties
   - dlm_version
   - aws_access_key
   - aws_secret_key
-  - nfs_supervision_path
-  - nfs_server_ip
-  - nfs_backup_path
 
 - name: Check if Docker is installed
   command: docker --version
@@ -72,57 +68,25 @@
   shell: docker pull {{ image_name }}
   become: true
 
-- name: Create Docker volume for service
-  docker_volume:
-    name: "{{ service_volume_name }}"
-    driver_options:
-      type: "nfs"
-      o: "addr={{ nfs_server_ip }},rw"
-      device: ":{{ nfs_backup_path }}"
-    state: present
+- name: Make sure docker secrets for internet info exist
+  command: "docker secret inspect maintenance.internet.authentication"
+  ignore_errors: yes
+  register: secret_internet_info
 
-- name: Create NFS Docker volume for supervision
-  docker_volume:
-    name: "{{ supervision_volume_name }}"
-    driver_options:
-      type: "nfs"
-      o: "addr={{ nfs_server_ip }},rw"
-      device: ":{{ nfs_supervision_path }}"
-    state: present
+- name: Fail if Docker secret does not exist
+  fail:
+    msg: "Docker secret 'maintenance.internet.authentication' does not exist."
+  when: secret_internet_info.rc != 0
 
-- name: Create temp file for internet info secrets
-  file:
-    path: "/tmp/internetInfo"
-    state: touch
+- name: Make sure docker secrets for p12 password exist
+  command: "docker secret inspect p12.password"
+  ignore_errors: yes
+  register: secret_p12_password
 
-- name: Write secrets to temp internet info file
-  lineinfile:
-    path: "/tmp/internetInfo"
-    line: "{{ item.key }}={{ item.value }}"
-    regexp: "^{{ item.key | replace('.', '\\.') }}="
-  with_dict: "{{ dlm_internet_secrets }}"
-
-- name: Create supervision directory on docker host
-  file: 
-    path: "{{ supervision_mount_path }}"
-    state: directory
-    
-- name: Create file for p12 secret
-  copy:
-    content: "{{ dlm_p12_password }}"
-    dest: "{{ supervision_mount_path }}/p12_password"
-
-- name: Create docker secrets for internet info
-  docker_secret:
-    name: "maintenance.internet.authentication"
-    data_src : "/tmp/internetInfo"
-    state: present
-
-- name: Create docker secrets for p12 password
-  docker_secret:
-    name: "p12.password"
-    data_src : "{{ supervision_mount_path }}/p12_password"
-    state: present
+- name: Fail if Docker secret does not exist
+  fail:
+    msg: "Docker secret 'p12.password' does not exist."
+  when: secret_p12_password.rc != 0
 
 - name: Deploy the Docker Swarm service
   docker_swarm_service:
@@ -145,19 +109,9 @@
         target: "{{ service_mount_path }}"
         driver_config:
           name: local
-          options:
-            type: "nfs"
-            o: "addr={{ nfs_server_ip }},rw"
-            device: ":{{ nfs_backup_path }}"
       - type: volume
         source: "{{ supervision_volume_name }}"
         target: "{{ supervision_mount_path }}"
-        driver_config:
-          name: local
-          options:
-            type: "nfs"
-            o: "addr={{ nfs_server_ip }},rw"
-            device: ":{{ nfs_supervision_path }}"
     secrets:
       - secret_name: "maintenance.internet.authentication"
         filename: "/tmp/internetInfo"
