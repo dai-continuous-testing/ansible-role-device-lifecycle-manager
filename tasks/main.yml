@@ -27,19 +27,19 @@
     msg: "Docker is not installed on this host."
   when: docker_installed.failed
 
-- name: Check if Docker Swarm is initialized
-  command: "docker info --format '{% raw %}{{.Swarm.LocalNodeState}}{% endraw %}'"
+- name: Check if machine is Swarm Manager
+  command: "docker info --format '{% raw %}{{.Swarm.ControlAvailable}}{% endraw %}'"
   register: swarm_status
 
-- name: Fail if Docker Swarm is not initialized
+- name: Fail if machine is not Swarm Manager
   fail:
-    msg: "Docker Swarm is not initialized on this host."
-  when: swarm_status.stdout != "active"
+    msg: "This is not a Docker Swarm Manager"
+  when: swarm_status.stdout != "true"
 
 - name: Success message
   debug:
-    msg: "Docker is installed and Docker Swarm is initialized."
-  when: swarm_status.stdout == "active"
+    msg: "Docker is installed and is Docker Swarm Manager"
+  when: swarm_status.stdout == "true"
 
 
 ## Required dependencies for ansible docker modules.
