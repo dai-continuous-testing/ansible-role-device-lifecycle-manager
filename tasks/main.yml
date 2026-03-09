@@ -90,12 +90,52 @@
     msg: "Docker secret 'p12.password' does not exist."
   when: secret_p12_password.rc != 0
 
+- name: Set JAVA_OPTS for OTEL
+  set_fact:
+    extra_java_options: "{{ ('-javaagent:' + otel_jar_path + ' ' + (otel_options | join(' '))) if otel_enabled | default(false) else '' }}"
+
+- name: Build base service mounts
+  set_fact:
+    service_mounts:
+      - type: volume
+        source: "{{ service_volume_name }}"
+        target: "{{ service_mount_path }}"
+        driver_config:
+          name: local
+      - type: volume
+        source: "{{ supervision_volume_name }}"
+        target: "{{ supervision_mount_path }}"
+
+- name: Append OTEL volume mount if otel_enabled
+  set_fact:
+    service_mounts: "{{ service_mounts + [{'type': 'volume', 'source': otel_volume_name, 'target': otel_mount_path}] }}"
+  when: otel_enabled | default(false)
+
+- name: Build base service networks
+  set_fact:
+    service_networks:
+      - name: bridge
+
+- name: Append monitoring network if otel_enabled
+  set_fact:
+    service_networks: "{{ service_networks + [{'name': 'monitoring'}] }}"
+  when: otel_enabled | default(false)
+
+- name: Ensure monitoring overlay network exists
+  docker_network:
+    name: monitoring
+    driver: overlay
+    attachable: true
+    state: present
+  when: otel_enabled | default(false)
+
 - name: Deploy the Docker Swarm service
   docker_swarm_service:
     name: "{{ service_name }}"
     image: "{{ image_name }}"
     env:
       SPRING_APPLICATION_JSON: "{{ dlm_application_properties | to_json }}"
+      JAVA_OPTS: "{{ extra_java_options | trim }}"
     mode: replicated
     replicas: "{{ dlm_replicas }}"
     force_update: true
@@ -105,15 +145,8 @@
       failure_action: rollback
       monitor: 60s
       order: start-first
-    mounts:
-      - type: volume
-        source: "{{ service_volume_name }}"
-        target: "{{ service_mount_path }}"
-        driver_config:
-          name: local
-      - type: volume
-        source: "{{ supervision_volume_name }}"
-        target: "{{ supervision_mount_path }}"
+    networks: "{{ service_networks }}"
+    mounts: "{{ service_mounts }}"
     secrets:
       - secret_name: "maintenance.internet.authentication"
         filename: "/tmp/internetInfo"

@@ -12,6 +12,30 @@ aws_secret_key: "{{ lookup('env','aws_secret_key') }}"
 # group_vars/all.yml
 dlm_application_properties: {}
 
+otel_enabled: false
+
+# OTEL individual configuration — override only what you need via inventory
+otel_service_name: "device-lifecycle-manager"
+otel_deployment_environment: "dev"
+otel_service_namespace: "daict"
+otel_customer: "shared-devices"
+otel_resource_attributes: "deployment.environment={{ otel_deployment_environment }},service.namespace={{ otel_service_namespace }},customer={{ otel_customer }}"
+otel_exporter_endpoint: "http://grafana-alloy:4317"
+otel_exporter_protocol: "grpc"
+otel_logs_exporter: "none"
+
+# Composed from individual vars above — do not override this directly
+otel_options:
+  - "-Dotel.service.name={{ otel_service_name }}"
+  - "-Dotel.resource.attributes={{ otel_resource_attributes }}"
+  - "-Dotel.exporter.otlp.endpoint={{ otel_exporter_endpoint }}"
+  - "-Dotel.exporter.otlp.protocol={{ otel_exporter_protocol }}"
+  - "-Dotel.logs.exporter={{ otel_logs_exporter }}"
+
+otel_jar_path: "{{ otel_mount_path }}/opentelemetry-javaagent.jar"
+otel_volume_name: "otel_volume"
+otel_mount_path: "/root/otel-javaagent"
+
 service_volume_name: "{{ service_name }}-backup"
 supervision_volume_name: "SuperVision"
 
