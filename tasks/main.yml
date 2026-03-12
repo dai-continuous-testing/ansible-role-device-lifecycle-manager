@@ -92,7 +92,16 @@
 
 - name: Set JAVA_OPTS for OTEL
   set_fact:
-    extra_java_options: "{{ ('-javaagent:' + otel_jar_path + ' ' + (otel_options | join(' '))) if otel_enabled | default(false) else '' }}"
+    extra_java_options: >-
+      {%- if otel_enabled | default(false) -%}
+        -javaagent:{{ otel_jar_path }}
+        -Dotel.service.name={{ otel_service_name }}
+        -Dotel.resource.attributes={{ otel_resource_attributes }}
+        -Dotel.exporter.otlp.endpoint={{ otel_exporter_endpoint }}
+        -Dotel.exporter.otlp.protocol={{ otel_exporter_protocol }}
+        -Dotel.logs.exporter={{ otel_logs_exporter }}
+      {%- else -%}
+      {%- endif -%}
 
 - name: Build base service mounts
   set_fact:
