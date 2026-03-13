@@ -103,7 +103,6 @@
         -Dkafka.request.timeout.ms=60000
         -Dotel.javaagent.debug=true
         -Dotel.traces.sampler=always_on
-        -Dotel.instrumentation.spring-integration.enabled=false
       {%- else -%}
       {%- endif -%}
 
