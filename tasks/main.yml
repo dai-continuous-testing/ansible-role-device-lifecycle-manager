@@ -100,7 +100,9 @@
         -Dotel.exporter.otlp.endpoint={{ otel_exporter_endpoint }}
         -Dotel.exporter.otlp.protocol={{ otel_exporter_protocol }}
         -Dotel.logs.exporter={{ otel_logs_exporter }}
-        -Dotel.traces.exporter=logging
+        -Dotel.traces.exporter=otlp,logging
+        -Dotel.java.log.level=DEBUG
+        -Djava.util.logging.SimpleFormatter.format=%1$tF %1$tT %4$s %2$s %5$s%6$s%n
         -Dkafka.request.timeout.ms=60000
         -Dotel.javaagent.debug=true
         -Dotel.traces.sampler=always_on
@@ -149,6 +151,7 @@
     env:
       SPRING_APPLICATION_JSON: "{{ dlm_application_properties | to_json }}"
       JAVA_OPTS: "{{ extra_java_options | trim }}"
+      OTEL_JAVAAGENT_LOGGING: "simple"
     mode: replicated
     replicas: "{{ dlm_replicas }}"
     force_update: true
