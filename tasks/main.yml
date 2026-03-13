@@ -101,6 +101,8 @@
         -Dotel.exporter.otlp.protocol={{ otel_exporter_protocol }}
         -Dotel.logs.exporter={{ otel_logs_exporter }}
         -Dkafka.request.timeout.ms=60000
+        -Dotel.javaagent.debug=true
+        -Dotel.traces.sampler=always_on
       {%- else -%}
       {%- endif -%}
 
