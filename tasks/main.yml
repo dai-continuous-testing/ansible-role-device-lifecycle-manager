@@ -54,7 +54,7 @@
   pip:
     name:
       - docker
-    state: present
+    state: latest
 
 - name: login to aws ecr
   shell: "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin {{awsecr_name}}"
