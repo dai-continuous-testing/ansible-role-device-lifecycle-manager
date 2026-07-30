@@ -96,8 +96,8 @@
   docker_swarm_service:
     name: "{{ service_name }}"
     image: "{{ image_name }}"
-    env:
-      SPRING_APPLICATION_JSON: "{{ dlm_application_properties | to_json }}"
+    env: "{{ {'SPRING_APPLICATION_JSON': dlm_application_properties | to_json}
+             | combine(dlm_otel_env if (dlm_otel_enabled | bool) else {'OTEL_SDK_DISABLED': 'true'}) }}"
     mode: replicated
     replicas: "{{ dlm_replicas }}"
     force_update: true
