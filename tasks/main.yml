@@ -98,6 +98,9 @@
     image: "{{ image_name }}"
     env: "{{ {'SPRING_APPLICATION_JSON': dlm_application_properties | to_json}
              | combine(dlm_otel_env if (dlm_otel_enabled | bool) else {'OTEL_SDK_DISABLED': 'true'}) }}"
+    # When OTel is enabled, map host.docker.internal -> host-gateway so the container can reach a
+    # host-local Alloy (OTLP/gRPC). omit leaves the service unchanged when OTel is disabled.
+    hosts: "{{ dlm_otel_host_aliases if (dlm_otel_enabled | bool) else omit }}"
     mode: replicated
     replicas: "{{ dlm_replicas }}"
     force_update: true

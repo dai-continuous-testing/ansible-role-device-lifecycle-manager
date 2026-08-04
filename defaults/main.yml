@@ -42,10 +42,18 @@ dlm_otel_environment: "prod"          # -> deployment.environment resource attri
 dlm_otel_namespace: "daict"           # -> service.namespace resource attribute
 dlm_otel_customer: "default"          # -> customer resource attribute
 
-# Grafana Alloy OTLP/gRPC receiver (base URL). Override host per-inventory.
-dlm_otel_alloy_host: "localhost"
+# Grafana Alloy OTLP/gRPC receiver (base URL). Default targets an Alloy running on the swarm
+# node's host, reached via the host.docker.internal alias (mapped to host-gateway below).
+# Override host per-inventory to point at a different collector.
+dlm_otel_alloy_host: "host.docker.internal"
 dlm_otel_alloy_port: 4317
 dlm_otel_alloy_endpoint: "http://{{ dlm_otel_alloy_host }}:{{ dlm_otel_alloy_port }}"
+
+# Extra /etc/hosts entries added to the service container when OTel is enabled, so
+# host.docker.internal resolves to the node's host gateway (host-gateway is resolved per-node
+# by the Docker daemon). Required on Linux swarm nodes to reach a host-local Alloy.
+dlm_otel_host_aliases:
+  host.docker.internal: host-gateway
 
 # Env vars injected into the swarm service when dlm_otel_enabled is true (overriding the image's
 # OTEL_SDK_DISABLED=true default). All values are strings (docker_swarm_service requires strings).
