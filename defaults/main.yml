@@ -27,3 +27,42 @@ dlm_internet_secrets:
   - wifi.password: "12345678"
 
 dlm_p12_password: ""
+
+# --- OpenTelemetry (community opentelemetry-spring-boot-starter, OTLP/gRPC) ------------------
+# This role owns the OTel config. OFF by default: the task sets OTEL_SDK_DISABLED=true when
+# disabled (the image also defaults to disabled as a bare-`docker run` safety net). Set
+# dlm_otel_enabled: true to turn it on, injecting the full env below into the swarm service.
+# Traces, logs and metrics all export to the same OTLP/gRPC endpoint (4317, base URL) and carry
+# the same resource attributes, so they correlate in Grafana. Same otel.*/OTEL_* vocabulary,
+# protocol and port as the cloud-server role.
+dlm_otel_enabled: false
+
+dlm_otel_service_name: "dlm"
+dlm_otel_environment: "prod"          # -> deployment.environment resource attribute
+dlm_otel_namespace: "daict"           # -> service.namespace resource attribute
+dlm_otel_customer: "default"          # -> customer resource attribute
+
+# Grafana Alloy OTLP/gRPC receiver (base URL). Default targets an Alloy running on the swarm
+# node's host, reached via the host.docker.internal alias (mapped to host-gateway below).
+# Override host per-inventory to point at a different collector.
+dlm_otel_alloy_host: "host.docker.internal"
+dlm_otel_alloy_port: 4317
+dlm_otel_alloy_endpoint: "http://{{ dlm_otel_alloy_host }}:{{ dlm_otel_alloy_port }}"
+
+# Extra /etc/hosts entries added to the service container when OTel is enabled, so
+# host.docker.internal resolves to the node's host gateway (host-gateway is resolved per-node
+# by the Docker daemon). Required on Linux swarm nodes to reach a host-local Alloy.
+dlm_otel_host_aliases:
+  host.docker.internal: host-gateway
+
+# Env vars injected into the swarm service when dlm_otel_enabled is true (overriding the image's
+# OTEL_SDK_DISABLED=true default). All values are strings (docker_swarm_service requires strings).
+dlm_otel_env:
+  OTEL_SDK_DISABLED: "false"
+  OTEL_SERVICE_NAME: "{{ dlm_otel_service_name }}"
+  OTEL_RESOURCE_ATTRIBUTES: "deployment.environment={{ dlm_otel_environment }},service.namespace={{ dlm_otel_namespace }},customer={{ dlm_otel_customer }}"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "{{ dlm_otel_alloy_endpoint }}"
+  OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+  OTEL_TRACES_EXPORTER: "otlp"
+  OTEL_METRICS_EXPORTER: "otlp"
+  OTEL_LOGS_EXPORTER: "otlp"

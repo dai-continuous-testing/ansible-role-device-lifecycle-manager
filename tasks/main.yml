@@ -52,14 +52,11 @@
 
 - name: Install Docker SDK for Python
   pip:
-    name: "{{ item }}"
-    state: present
-  environment:
-    PIP_BREAK_SYSTEM_PACKAGES: "1"
-  with_items:
-    - certifi==2020.6.20
-    - requests==2.24.0
-    - docker==4.3.1
+    name:
+      - docker>=6.1.0
+      - requests>=2.31
+      - urllib3<2
+    state: latest
 
 - name: login to aws ecr
   shell: "aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin {{awsecr_name}}"
@@ -96,8 +93,11 @@
   docker_swarm_service:
     name: "{{ service_name }}"
     image: "{{ image_name }}"
-    env:
-      SPRING_APPLICATION_JSON: "{{ dlm_application_properties | to_json }}"
+    env: "{{ {'SPRING_APPLICATION_JSON': dlm_application_properties | to_json}
+             | combine(dlm_otel_env if (dlm_otel_enabled | bool) else {'OTEL_SDK_DISABLED': 'true'}) }}"
+    # When OTel is enabled, map host.docker.internal -> host-gateway so the container can reach a
+    # host-local Alloy (OTLP/gRPC). omit leaves the service unchanged when OTel is disabled.
+    hosts: "{{ dlm_otel_host_aliases if (dlm_otel_enabled | bool) else omit }}"
     mode: replicated
     replicas: "{{ dlm_replicas }}"
     force_update: true
