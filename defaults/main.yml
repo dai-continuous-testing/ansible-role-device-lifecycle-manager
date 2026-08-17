@@ -41,6 +41,9 @@ dlm_otel_service_name: "dlm"
 dlm_otel_environment: "prod"          # -> deployment.environment resource attribute
 dlm_otel_namespace: "daict"           # -> service.namespace resource attribute
 dlm_otel_customer: "default"          # -> customer resource attribute
+# -> service.instance.id resource attribute. Defaults to the swarm service name (unique per
+# DLM service on a host) so multiple instances on the same node are distinguishable in Grafana.
+dlm_otel_instance_id: "{{ service_name }}"
 
 # Grafana Alloy OTLP/gRPC receiver (base URL). Default targets an Alloy running on the swarm
 # node's host, reached via the host.docker.internal alias (mapped to host-gateway below).
@@ -60,7 +63,7 @@ dlm_otel_host_aliases:
 dlm_otel_env:
   OTEL_SDK_DISABLED: "false"
   OTEL_SERVICE_NAME: "{{ dlm_otel_service_name }}"
-  OTEL_RESOURCE_ATTRIBUTES: "deployment.environment={{ dlm_otel_environment }},service.namespace={{ dlm_otel_namespace }},customer={{ dlm_otel_customer }}"
+  OTEL_RESOURCE_ATTRIBUTES: "deployment.environment={{ dlm_otel_environment }},service.namespace={{ dlm_otel_namespace }},customer={{ dlm_otel_customer }},service.instance.id={{ dlm_otel_instance_id }}"
   OTEL_EXPORTER_OTLP_ENDPOINT: "{{ dlm_otel_alloy_endpoint }}"
   OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
   OTEL_TRACES_EXPORTER: "otlp"
