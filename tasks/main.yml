@@ -68,6 +68,9 @@
       failure_action: rollback
       monitor: 60s
       order: stop-first
+    stop_grace_period: 60s
+    rollback_config:
+      order: stop-first
     mounts:
       - type: volume
         source: "{{ service_volume_name }}"
