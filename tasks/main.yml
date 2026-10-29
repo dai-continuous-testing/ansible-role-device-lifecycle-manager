@@ -67,7 +67,7 @@
       delay: 10s
       failure_action: rollback
       monitor: 60s
-      order: start-first
+      order: stop-first
     mounts:
       - type: volume
         source: "{{ service_volume_name }}"
